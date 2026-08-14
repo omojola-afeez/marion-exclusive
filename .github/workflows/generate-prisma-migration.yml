@@ -9,6 +9,16 @@ permissions:
 jobs:
   generate-migration:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: marion
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,17 +36,15 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Start temporary Postgres
+      - name: Wait for Postgres
         run: |
-          docker run -d --name me-postgres -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=marion -p 5432:5432 postgres:15
-          # wait for Postgres to be ready
-          for i in {1..20}; do
-            docker exec me-postgres pg_isready -U postgres && break || sleep 1
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres && break || sleep 1
           done
 
       - name: Create migration (create-only)
         env:
-          DATABASE_URL: postgresql://postgres:pass@127.0.0.1:5432/marion
+          DATABASE_URL: postgresql://postgres:pass@localhost:5432/marion
         run: |
           # create migration files without applying to production
           npx prisma migrate dev --name add-nextauth-and-idempotency --create-only || npx prisma migrate dev --name add-nextauth-and-idempotency
