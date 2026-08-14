@@ -7,19 +7,26 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "migrate:dev": "npx prisma migrate dev",
+    "migrate:deploy": "npx prisma migrate deploy",
     "postinstall": "prisma generate",
     "db:seed": "tsx prisma/seed.ts"
+  },
+  "playwright": {
+    "browsers": "chromium"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@next-auth/prisma-adapter": "^1.0.0",
     "@stripe/react-stripe-js": "^6.8.0",
     "@stripe/stripe-js": "^9.12.1",
     "bcryptjs": "^3.0.3",
     "next": "^15.5.22",
     "next-auth": "^5.0.0-beta.32",
+    "zod": "^4.25.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "stripe": "^22.3.2"
@@ -27,6 +34,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
+    "@playwright/test": "^1.51.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

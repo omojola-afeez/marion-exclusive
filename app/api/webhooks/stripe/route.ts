@@ -49,5 +49,7 @@ export async function POST(request: Request) {
     }
   }
 
+  // For other event types or repeated delivery, respond success once processed.
+
   return NextResponse.json({ received: true });
 }

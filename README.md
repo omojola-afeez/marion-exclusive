@@ -37,4 +37,27 @@ That live URL loading correctly is the Milestone 1 test.
 
 ## What's next (Milestone 2)
 
-Connecting the real Supabase database and adding the actual data models (products, orders, customers, etc.), replacing the placeholder `HealthCheck` model in `prisma/schema.prisma`.
+Connecting the real database and adding the actual data models (products, orders, customers, etc.).
+
+### Migrations and production deployment
+
+Recommended approach (safe, works with Vercel and GitHub Actions):
+
+- Locally during development, run:
+
+```bash
+npm install
+npm run migrate:dev -- --name init
+npm run db:seed
+```
+
+- For production / preview deployments (CI): ensure `DATABASE_URL` is set in your hosting provider's secrets (Vercel Environment Variables or GitHub Secrets). CI will run:
+
+```bash
+npx prisma generate
+npx prisma migrate deploy
+```
+
+- Alternatively, you can run migrations manually on the production database from your machine using `npm run migrate:deploy` after setting `DATABASE_URL`.
+
+This repository includes a guarded CI step that runs `npx prisma migrate deploy` when `DATABASE_URL` is configured.

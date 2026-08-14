@@ -1,0 +1,65 @@
+name: Generate Prisma Migration (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Start temporary Postgres
+        run: |
+          docker run -d --name me-postgres -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=marion -p 5432:5432 postgres:15
+          # wait for Postgres to be ready
+          for i in {1..20}; do
+            docker exec me-postgres pg_isready -U postgres && break || sleep 1
+          done
+
+      - name: Create migration (create-only)
+        env:
+          DATABASE_URL: postgresql://postgres:pass@127.0.0.1:5432/marion
+        run: |
+          # create migration files without applying to production
+          npx prisma migrate dev --name add-nextauth-and-idempotency --create-only || npx prisma migrate dev --name add-nextauth-and-idempotency
+
+      - name: Commit and push migrations
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH=${GITHUB_REF#refs/heads/}
+          # If running on workflow_dispatch, default to main
+          if [ -z "$BRANCH" ]; then BRANCH=main; fi
+          git add prisma/migrations || true
+          if git diff --staged --quiet; then
+            echo "No new migrations to commit"
+          else
+            git commit -m "chore(prisma): add migration for schema changes"
+            git push origin HEAD:$BRANCH
+          fi
+
+      - name: Cleanup Postgres
+        if: always()
+        run: |
+          docker stop me-postgres || true
+          docker rm me-postgres || true
