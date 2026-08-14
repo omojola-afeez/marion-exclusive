@@ -30,9 +30,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
+      - name: Install minimal Prisma tooling
+        run: |
+          # Install only Prisma CLI + client to avoid installing full project deps
+          npm install --no-save prisma@6.19.3 @prisma/client@6.19.3
       - name: Generate Prisma client
         run: npx prisma generate
 
